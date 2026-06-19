@@ -80,13 +80,22 @@ def coletar_noticias():
     print(f"[COLETA] {len(fontes)} fontes ativas encontradas.")
     total_novas = 0
 
+    HEADERS = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+        "Accept": "application/rss+xml, application/xml, text/xml, */*",
+    }
+
     for fonte in fontes:
         try:
             print(f"[COLETA] Buscando: {fonte['nome']} → {fonte['url_rss']}")
-            feed = feedparser.parse(fonte["url_rss"])
-            print(f"[COLETA] {fonte['nome']}: {len(feed.entries)} entradas no feed | status: {getattr(feed, 'status', 'N/A')} | bozo: {getattr(feed, 'bozo', False)}")
-            if getattr(feed, 'bozo', False):
-                print(f"[COLETA] Erro no feed {fonte['nome']}: {getattr(feed, 'bozo_exception', 'desconhecido')}")
+            # Busca manual com headers de navegador para evitar bloqueio 405/403
+            resp = requests.get(fonte["url_rss"], headers=HEADERS, timeout=15)
+            print(f"[COLETA] {fonte['nome']}: HTTP {resp.status_code}")
+            if resp.status_code != 200:
+                print(f"[COLETA] Pulando {fonte['nome']} — status {resp.status_code}")
+                continue
+            feed = feedparser.parse(resp.content)
+            print(f"[COLETA] {fonte['nome']}: {len(feed.entries)} entradas no feed")
             for entry in feed.entries[:20]:  # máximo 20 por fonte
                 url = entry.get("link", "")
                 titulo = entry.get("title", "").strip()
