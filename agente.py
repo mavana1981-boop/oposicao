@@ -171,7 +171,7 @@ def analisar_noticias():
            JOIN fontes f ON f.id = n.fonte_id
            WHERE n.processada = FALSE
            ORDER BY n.coletada_em DESC
-           LIMIT 100"""
+           LIMIT 20"""
     )
 
     if not noticias:
