@@ -179,14 +179,39 @@ Analise esta notícia conforme as instruções."""
             )
 
             raw = response.text.strip()
-            # Limpar possíveis marcadores de código
-            if raw.startswith("```"):
-                raw = raw.split("```")[1]
-                if raw.startswith("json"):
-                    raw = raw[4:]
-            raw = raw.strip()
 
-            resultado = json.loads(raw)
+            # Extrair JSON — remove markdown, pega só o bloco entre { }
+            if "```" in raw:
+                partes = raw.split("```")
+                for parte in partes:
+                    parte = parte.strip()
+                    if parte.startswith("json"):
+                        parte = parte[4:].strip()
+                    if parte.startswith("{"):
+                        raw = parte
+                        break
+
+            # Garantir que começa e termina no JSON
+            inicio = raw.find("{")
+            fim = raw.rfind("}") + 1
+            if inicio >= 0 and fim > inicio:
+                raw = raw[inicio:fim]
+
+            try:
+                resultado = json.loads(raw)
+            except json.JSONDecodeError:
+                # Última tentativa: pedir resposta mais curta e simples
+                response2 = model.generate_content(
+                    f"Responda APENAS com JSON válido, sem texto antes ou depois:
+{raw}
+
+Se o JSON acima estiver quebrado, retorne: {{"relevante": false, "categoria": null, "tipo_acao": null, "acao_sugerida": null, "justificativa": "erro de parse"}}",
+                    generation_config=genai.types.GenerationConfig(temperature=0, max_output_tokens=200)
+                )
+                raw2 = response2.text.strip()
+                inicio2 = raw2.find("{")
+                fim2 = raw2.rfind("}") + 1
+                resultado = json.loads(raw2[inicio2:fim2])
 
             execute(
                 """INSERT INTO briefings
@@ -208,14 +233,17 @@ Analise esta notícia conforme as instruções."""
             erro = str(e)
             print(f"[ERRO] Notícia {noticia['id']}: {erro}")
             if "no longer available" in erro or "404" in erro:
-                # Modelo aposentado — redetectar e parar o ciclo atual
                 global MODELO_ATIVO
                 print("[MODELO] Modelo indisponível, redetectando...")
                 MODELO_ATIVO = detectar_modelo()
                 print(f"[MODELO] Novo modelo: {MODELO_ATIVO}")
-                break  # para o loop, próximo ciclo usa o novo modelo
-            # Outros erros: marca como processada para não travar
-            execute("UPDATE noticias SET processada = TRUE WHERE id = %s", (noticia["id"],))
+                break
+            elif "JSONDecodeError" in erro or "Unterminated" in erro or "Expecting" in erro:
+                # Erro de parse — não marca como processada, tenta no próximo ciclo
+                print(f"[PARSE] Notícia {noticia['id']} com JSON inválido, será retentada.")
+            else:
+                # Erro desconhecido — marca para não travar o loop
+                execute("UPDATE noticias SET processada = TRUE WHERE id = %s", (noticia["id"],))
 
     print(f"[ANÁLISE] {analisadas} notícias analisadas.")
     return analisadas
