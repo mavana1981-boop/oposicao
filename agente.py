@@ -9,7 +9,8 @@ from database import query, execute
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY", ""))
 
 MODELOS_PREFERIDOS = [
-    "gemini-2.0-flash",
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
     "gemini-2.0-flash-lite",
     "gemini-1.5-flash",
     "gemini-1.5-flash-8b",
@@ -24,18 +25,23 @@ def detectar_modelo():
             for m in genai.list_models()
             if "generateContent" in m.supported_generation_methods
         ]
+        print(f"[MODELO] Disponíveis: {disponiveis}")
         for preferido in MODELOS_PREFERIDOS:
             if preferido in disponiveis:
-                print(f"[MODELO] Usando: {preferido}")
+                print(f"[MODELO] Selecionado: {preferido}")
                 return preferido
         if disponiveis:
             print(f"[MODELO] Fallback para: {disponiveis[0]}")
             return disponiveis[0]
     except Exception as e:
         print(f"[MODELO] Erro ao listar modelos: {e}")
-    return "gemini-2.0-flash"
+    return "gemini-1.5-flash"
 
 MODELO_ATIVO = detectar_modelo()
+
+def get_model():
+    """Retorna modelo ativo, redetectando se necessário."""
+    return genai.GenerativeModel(MODELO_ATIVO)
 
 PROMPT_SISTEMA = """Você é um analista político especializado em assessorar a Liderança da Oposição na Câmara dos Deputados do Brasil.
 
@@ -153,11 +159,11 @@ def analisar_noticias():
         print("[ANÁLISE] Nenhuma notícia pendente.")
         return 0
 
-    model = genai.GenerativeModel(MODELO_ATIVO)
     analisadas = 0
 
     for noticia in noticias:
         try:
+            model = get_model()
             prompt = f"""Fonte: {noticia['fonte_nome']}
 Título: {noticia['titulo']}
 Resumo: {noticia['resumo'] or 'Sem resumo disponível'}
@@ -199,8 +205,16 @@ Analise esta notícia conforme as instruções."""
             analisadas += 1
 
         except Exception as e:
-            print(f"[ERRO] Notícia {noticia['id']}: {e}")
-            # Marca como processada mesmo com erro para não travar o loop
+            erro = str(e)
+            print(f"[ERRO] Notícia {noticia['id']}: {erro}")
+            if "no longer available" in erro or "404" in erro:
+                # Modelo aposentado — redetectar e parar o ciclo atual
+                global MODELO_ATIVO
+                print("[MODELO] Modelo indisponível, redetectando...")
+                MODELO_ATIVO = detectar_modelo()
+                print(f"[MODELO] Novo modelo: {MODELO_ATIVO}")
+                break  # para o loop, próximo ciclo usa o novo modelo
+            # Outros erros: marca como processada para não travar
             execute("UPDATE noticias SET processada = TRUE WHERE id = %s", (noticia["id"],))
 
     print(f"[ANÁLISE] {analisadas} notícias analisadas.")
