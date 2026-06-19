@@ -66,8 +66,23 @@ def init_db():
                     acao_sugerida TEXT,
                     justificativa TEXT,
                     tipo_acao TEXT,
-                    gerado_em TIMESTAMPTZ DEFAULT NOW()
+                    gerado_em TIMESTAMPTZ DEFAULT NOW(),
+                    status TEXT DEFAULT 'Pendente',
+                    assessor TEXT
                 );
+            """)
+
+            # Adicionar colunas novas se não existirem (banco já existente)
+            cur.execute("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='briefings' AND column_name='status') THEN
+                        ALTER TABLE briefings ADD COLUMN status TEXT DEFAULT 'Pendente';
+                    END IF;
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='briefings' AND column_name='assessor') THEN
+                        ALTER TABLE briefings ADD COLUMN assessor TEXT;
+                    END IF;
+                END$$;
             """)
 
             # Remover Câmara e Senado (e dados vinculados)
