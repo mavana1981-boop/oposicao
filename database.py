@@ -70,7 +70,28 @@ def init_db():
                 );
             """)
 
-            # Garantir constraint UNIQUE em url_rss (caso a tabela já exista sem ela)
+            # Remover Câmara e Senado (e dados vinculados)
+            cur.execute("""
+                DELETE FROM briefings WHERE noticia_id IN (
+                    SELECT n.id FROM noticias n
+                    JOIN fontes f ON f.id = n.fonte_id
+                    WHERE f.nome IN ('Agência Câmara', 'Agência Senado')
+                );
+                DELETE FROM noticias WHERE fonte_id IN (
+                    SELECT id FROM fontes WHERE nome IN ('Agência Câmara', 'Agência Senado')
+                );
+                DELETE FROM fontes WHERE nome IN ('Agência Câmara', 'Agência Senado');
+            """)
+
+            # Remover duplicatas de url_rss mantendo o menor id
+            cur.execute("""
+                DELETE FROM fontes
+                WHERE id NOT IN (
+                    SELECT MIN(id) FROM fontes GROUP BY url_rss
+                );
+            """)
+
+            # Agora criar constraint UNIQUE com segurança
             cur.execute("""
                 DO $$
                 BEGIN
@@ -92,6 +113,7 @@ def init_db():
                 """, (nome, url))
 
         conn.commit()
+        print("[DB] Banco inicializado com sucesso.")
 
 def query(sql, params=None, fetchall=True):
     with get_conn() as conn:
