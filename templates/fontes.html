@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fontes – Monitor Legislativo</title>
+<style>
+  :root {
+    --verde: #0F5C3A; --verde-claro: #1A7A4E; --verde-bg: #E8F3ED;
+    --amarelo: #F2C94C; --cinza-bg: #F5F4F0; --cinza-borda: #E0DED7;
+    --cinza-texto: #666560; --texto: #1A1918; --branco: #FFFFFF;
+    --perigo: #C0392B; --perigo-bg: #FDEDEC;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Georgia', serif; background: var(--cinza-bg); color: var(--texto); line-height: 1.6; }
+
+  header { background: var(--verde); color: white; border-bottom: 3px solid var(--amarelo); }
+  .header-inner { max-width: 1200px; margin: 0 auto; padding: 18px 24px; display: flex; align-items: center; gap: 14px; }
+  .header-icone { width: 40px; height: 40px; background: var(--amarelo); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .header-titulo { font-size: 18px; font-weight: bold; }
+  .header-subtitulo { font-family: 'Arial Narrow','Arial',sans-serif; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.75; margin-top: 2px; }
+
+  nav { background: #0A3D28; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  nav ul { max-width: 1200px; margin: 0 auto; padding: 0 24px; display: flex; list-style: none; }
+  nav a { display: block; padding: 10px 16px; color: rgba(255,255,255,0.7); text-decoration: none; font-family: 'Arial',sans-serif; font-size: 13px; letter-spacing: 0.04em; transition: color 0.15s, background 0.15s; }
+  nav a:hover, nav a.ativo { color: white; background: rgba(255,255,255,0.08); }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 28px 24px; }
+
+  .card { background: white; border: 1px solid var(--cinza-borda); border-radius: 8px; overflow: hidden; margin-bottom: 24px; }
+  .card-titulo { padding: 14px 20px; font-family: 'Arial',sans-serif; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: bold; color: var(--cinza-texto); border-bottom: 1px solid var(--cinza-borda); background: var(--cinza-bg); }
+
+  /* Formulário */
+  .form-adicionar { padding: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+  .form-grupo { display: flex; flex-direction: column; gap: 5px; }
+  .form-grupo label { font-family: 'Arial',sans-serif; font-size: 11px; font-weight: bold; letter-spacing: 0.05em; text-transform: uppercase; color: var(--cinza-texto); }
+  .form-grupo input { border: 1px solid var(--cinza-borda); border-radius: 6px; padding: 8px 12px; font-family: 'Arial',sans-serif; font-size: 13px; color: var(--texto); background: white; outline: none; }
+  .form-grupo input:focus { border-color: var(--verde); }
+  .form-grupo.nome { min-width: 180px; }
+  .form-grupo.url { flex: 1; min-width: 240px; }
+
+  /* Tabela de fontes */
+  table { width: 100%; border-collapse: collapse; }
+  th { padding: 10px 16px; font-family: 'Arial',sans-serif; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--cinza-texto); background: var(--cinza-bg); border-bottom: 1px solid var(--cinza-borda); text-align: left; font-weight: bold; }
+  td { padding: 13px 16px; border-bottom: 1px solid var(--cinza-borda); font-family: 'Arial',sans-serif; font-size: 13px; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #FAFAF8; }
+
+  .fonte-nome { font-weight: bold; color: var(--texto); }
+  .fonte-url { color: var(--cinza-texto); font-size: 12px; word-break: break-all; }
+
+  .badge-ativo { display: inline-block; padding: 2px 9px; border-radius: 10px; font-size: 11px; font-weight: bold; background: var(--verde-bg); color: var(--verde); }
+  .badge-inativo { display: inline-block; padding: 2px 9px; border-radius: 10px; font-size: 11px; font-weight: bold; background: var(--cinza-bg); color: var(--cinza-texto); }
+
+  .acoes { display: flex; gap: 6px; }
+
+  .btn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 6px; font-family: 'Arial',sans-serif; font-size: 12px; font-weight: bold; cursor: pointer; border: none; text-decoration: none; transition: opacity 0.15s; }
+  .btn:hover { opacity: 0.8; }
+  .btn-primario { background: var(--amarelo); color: var(--verde); }
+  .btn-toggle-on { background: var(--cinza-bg); color: var(--cinza-texto); border: 1px solid var(--cinza-borda); }
+  .btn-toggle-off { background: var(--verde-bg); color: var(--verde); border: 1px solid #9BCFB0; }
+  .btn-excluir { background: var(--perigo-bg); color: var(--perigo); border: 1px solid #F1B0AA; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-icone">🏛️</div>
+    <div>
+      <div class="header-titulo">Monitor Legislativo</div>
+      <div class="header-subtitulo">Liderança da Oposição · Câmara dos Deputados</div>
+    </div>
+  </div>
+  <nav>
+    <ul>
+      <li><a href="/">📋 Briefings</a></li>
+      <li><a href="/fontes" class="ativo">📡 Fontes</a></li>
+    </ul>
+  </nav>
+</header>
+
+<div class="container">
+
+  <!-- Adicionar nova fonte -->
+  <div class="card">
+    <div class="card-titulo">Adicionar nova fonte RSS</div>
+    <form action="/fontes/adicionar" method="POST" class="form-adicionar">
+      <div class="form-grupo nome">
+        <label for="nome">Nome</label>
+        <input type="text" id="nome" name="nome" placeholder="ex: Folha de S.Paulo" required>
+      </div>
+      <div class="form-grupo url">
+        <label for="url_rss">URL do feed RSS</label>
+        <input type="url" id="url_rss" name="url_rss" placeholder="https://..." required>
+      </div>
+      <button type="submit" class="btn btn-primario">+ Adicionar</button>
+    </form>
+  </div>
+
+  <!-- Lista de fontes -->
+  <div class="card">
+    <div class="card-titulo">Fontes cadastradas ({{ fontes|length }})</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Fonte</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for fonte in fontes %}
+        <tr>
+          <td>
+            <div class="fonte-nome">{{ fonte.nome }}</div>
+            <div class="fonte-url"><a href="{{ fonte.url_rss }}" target="_blank" rel="noopener">{{ fonte.url_rss }}</a></div>
+          </td>
+          <td>
+            {% if fonte.ativa %}
+            <span class="badge-ativo">● Ativa</span>
+            {% else %}
+            <span class="badge-inativo">○ Pausada</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="acoes">
+              <form action="/fontes/{{ fonte.id }}/toggle" method="POST" style="display:inline">
+                <button type="submit" class="btn {% if fonte.ativa %}btn-toggle-on{% else %}btn-toggle-off{% endif %}">
+                  {{ '⏸ Pausar' if fonte.ativa else '▶ Ativar' }}
+                </button>
+              </form>
+              <form action="/fontes/{{ fonte.id }}/excluir" method="POST" style="display:inline"
+                    onsubmit="return confirm('Remover esta fonte?')">
+                <button type="submit" class="btn btn-excluir">✕ Remover</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <p style="font-family:'Arial',sans-serif; font-size:12px; color:var(--cinza-texto); text-align:center;">
+    💡 Dica: feeds RSS públicos funcionam melhor. Alguns portais têm feeds por editorias (ex: política, economia).
+  </p>
+</div>
+
+</body>
+</html>

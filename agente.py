@@ -1,0 +1,170 @@
+import os
+import json
+import feedparser
+import requests
+import google.generativeai as genai
+from datetime import datetime, timezone
+from database import query, execute
+
+genai.configure(api_key=os.environ.get("GEMINI_API_KEY", ""))
+
+PROMPT_SISTEMA = """Você é um analista político especializado em assessorar a Liderança da Oposição na Câmara dos Deputados do Brasil.
+
+Sua tarefa é analisar notícias e decidir se elas são relevantes para ações parlamentares da oposição.
+
+Para cada notícia, responda APENAS com um JSON válido neste formato:
+{
+  "relevante": true ou false,
+  "categoria": "uma das categorias abaixo ou null",
+  "tipo_acao": "um dos tipos abaixo ou null",
+  "acao_sugerida": "texto objetivo descrevendo a ação (máx. 120 chars) ou null",
+  "justificativa": "por que é relevante ou irrelevante (máx. 200 chars)"
+}
+
+Categorias possíveis:
+- "Gastos públicos / corrupção"
+- "Direitos e liberdades civis"
+- "Economia e emprego"
+- "Saúde pública"
+- "Segurança pública"
+- "Educação"
+- "Meio ambiente"
+- "Política externa"
+- "Reforma institucional"
+- "Outros"
+
+Tipos de ação parlamentar:
+- "Requerimento de informações"
+- "Requerimento de audiência pública"
+- "Nota à imprensa"
+- "Projeto de Lei"
+- "PEC"
+- "Ofício"
+- "Denúncia ao TCU/MPF"
+
+Seja seletivo: só marque como relevante notícias que efetivamente abrem espaço para ação parlamentar da oposição."""
+
+
+def coletar_noticias():
+    """Coleta notícias de todas as fontes ativas via RSS."""
+    fontes = query("SELECT * FROM fontes WHERE ativa = TRUE")
+    total_novas = 0
+
+    for fonte in fontes:
+        try:
+            feed = feedparser.parse(fonte["url_rss"])
+            for entry in feed.entries[:20]:  # máximo 20 por fonte
+                url = entry.get("link", "")
+                titulo = entry.get("title", "").strip()
+                resumo = entry.get("summary", entry.get("description", "")).strip()
+                # Limpar HTML básico do resumo
+                resumo = resumo.replace("<p>", "").replace("</p>", " ").strip()
+                if len(resumo) > 500:
+                    resumo = resumo[:500] + "..."
+
+                pub_date = None
+                if hasattr(entry, "published_parsed") and entry.published_parsed:
+                    pub_date = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
+
+                if not url or not titulo:
+                    continue
+
+                # Deduplicação por URL
+                existe = query(
+                    "SELECT id FROM noticias WHERE url = %s",
+                    (url,),
+                    fetchall=False
+                )
+                if existe:
+                    continue
+
+                execute(
+                    """INSERT INTO noticias (fonte_id, url, titulo, resumo, publicada_em)
+                       VALUES (%s, %s, %s, %s, %s)""",
+                    (fonte["id"], url, titulo, resumo, pub_date)
+                )
+                total_novas += 1
+
+        except Exception as e:
+            print(f"[ERRO] Fonte {fonte['nome']}: {e}")
+
+    print(f"[COLETA] {total_novas} novas notícias coletadas.")
+    return total_novas
+
+
+def analisar_noticias():
+    """Passa notícias não processadas pelo LLM Gemini para classificação."""
+    noticias = query(
+        """SELECT n.*, f.nome as fonte_nome
+           FROM noticias n
+           JOIN fontes f ON f.id = n.fonte_id
+           WHERE n.processada = FALSE
+           ORDER BY n.coletada_em DESC
+           LIMIT 30"""
+    )
+
+    if not noticias:
+        print("[ANÁLISE] Nenhuma notícia pendente.")
+        return 0
+
+    model = genai.GenerativeModel("gemini-1.5-flash")
+    analisadas = 0
+
+    for noticia in noticias:
+        try:
+            prompt = f"""Fonte: {noticia['fonte_nome']}
+Título: {noticia['titulo']}
+Resumo: {noticia['resumo'] or 'Sem resumo disponível'}
+
+Analise esta notícia conforme as instruções."""
+
+            response = model.generate_content(
+                [PROMPT_SISTEMA, prompt],
+                generation_config=genai.types.GenerationConfig(
+                    temperature=0.2,
+                    max_output_tokens=400,
+                )
+            )
+
+            raw = response.text.strip()
+            # Limpar possíveis marcadores de código
+            if raw.startswith("```"):
+                raw = raw.split("```")[1]
+                if raw.startswith("json"):
+                    raw = raw[4:]
+            raw = raw.strip()
+
+            resultado = json.loads(raw)
+
+            execute(
+                """INSERT INTO briefings
+                   (noticia_id, relevante, categoria, acao_sugerida, justificativa, tipo_acao)
+                   VALUES (%s, %s, %s, %s, %s, %s)""",
+                (
+                    noticia["id"],
+                    resultado.get("relevante", False),
+                    resultado.get("categoria"),
+                    resultado.get("acao_sugerida"),
+                    resultado.get("justificativa"),
+                    resultado.get("tipo_acao"),
+                )
+            )
+            execute("UPDATE noticias SET processada = TRUE WHERE id = %s", (noticia["id"],))
+            analisadas += 1
+
+        except Exception as e:
+            print(f"[ERRO] Notícia {noticia['id']}: {e}")
+            # Marca como processada mesmo com erro para não travar o loop
+            execute("UPDATE noticias SET processada = TRUE WHERE id = %s", (noticia["id"],))
+
+    print(f"[ANÁLISE] {analisadas} notícias analisadas.")
+    return analisadas
+
+
+def rodar_ciclo_completo():
+    """Executa um ciclo completo: coleta + análise."""
+    print(f"[AGENTE] Iniciando ciclo: {datetime.now().isoformat()}")
+    novas = coletar_noticias()
+    if novas > 0:
+        analisar_noticias()
+    print(f"[AGENTE] Ciclo concluído.")
