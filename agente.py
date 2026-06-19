@@ -39,7 +39,7 @@ MODELO_ATIVO = detectar_modelo()
 
 PROMPT_SISTEMA = """Você é um analista político especializado em assessorar a Liderança da Oposição na Câmara dos Deputados do Brasil.
 
-Sua tarefa é analisar notícias e decidir se elas são relevantes para ações parlamentares da oposição.
+Sua tarefa é analisar notícias e decidir se elas são relevantes para ações parlamentares da oposição. O escopo é amplo: além de política, também interessam notícias de segurança pública, saúde, educação, economia, crimes, corrupção, direitos civis e qualquer tema que possa fundamentar uma ação parlamentar.
 
 Para cada notícia, responda APENAS com um JSON válido neste formato:
 {
@@ -52,14 +52,15 @@ Para cada notícia, responda APENAS com um JSON válido neste formato:
 
 Categorias possíveis:
 - "Gastos públicos / corrupção"
-- "Direitos e liberdades civis"
-- "Economia e emprego"
+- "Segurança pública e crimes"
 - "Saúde pública"
-- "Segurança pública"
 - "Educação"
+- "Economia e emprego"
+- "Direitos e liberdades civis"
 - "Meio ambiente"
 - "Política externa"
 - "Reforma institucional"
+- "Infraestrutura e serviços públicos"
 - "Outros"
 
 Tipos de ação parlamentar:
@@ -70,8 +71,9 @@ Tipos de ação parlamentar:
 - "PEC"
 - "Ofício"
 - "Denúncia ao TCU/MPF"
+- "Requerimento de convocação"
 
-Seja seletivo: só marque como relevante notícias que efetivamente abrem espaço para ação parlamentar da oposição."""
+Marque como relevante sempre que a notícia revelar: falha do governo, omissão de órgão público, dado preocupante sobre serviço público, escândalo, crime com envolvimento de agente público, ou qualquer situação que justifique fiscalização parlamentar."""
 
 
 def coletar_noticias():
