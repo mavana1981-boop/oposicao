@@ -82,6 +82,9 @@ def init_db():
                     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='briefings' AND column_name='assessor') THEN
                         ALTER TABLE briefings ADD COLUMN assessor TEXT;
                     END IF;
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='briefings' AND column_name='acao_efetuada') THEN
+                        ALTER TABLE briefings ADD COLUMN acao_efetuada TEXT;
+                    END IF;
                 END$$;
             """)
 
