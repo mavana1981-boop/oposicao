@@ -5,6 +5,38 @@ from psycopg2.extras import RealDictCursor
 def get_conn():
     return psycopg2.connect(os.environ["DATABASE_URL"])
 
+FONTES_PADRAO = [
+    # Grupo Globo
+    ("G1 Política",         "https://g1.globo.com/rss/g1/politica/"),
+    ("G1 Economia",         "https://g1.globo.com/rss/g1/economia/"),
+    ("G1 Saúde",            "https://g1.globo.com/rss/g1/ciencia-e-saude/"),
+    ("G1 Educação",         "https://g1.globo.com/rss/g1/educacao/"),
+    ("G1 Segurança",        "https://g1.globo.com/rss/g1/politica/"),  # G1 não tem feed separado de segurança
+    # Grupo Estado
+    ("Estadão Política",    "https://feeds.estadao.com.br/rss/politica"),
+    ("Estadão Economia",    "https://feeds.estadao.com.br/rss/economia"),
+    ("Estadão Brasil",      "https://feeds.estadao.com.br/rss/brasil"),
+    # Folha de S.Paulo
+    ("Folha Poder",         "https://feeds.folha.uol.com.br/poder/rss091.xml"),
+    ("Folha Mercado",       "https://feeds.folha.uol.com.br/mercado/rss091.xml"),
+    ("Folha Saúde",         "https://feeds.folha.uol.com.br/equilibrioesaude/rss091.xml"),
+    ("Folha Educação",      "https://feeds.folha.uol.com.br/educacao/rss091.xml"),
+    ("Folha Cotidiano",     "https://feeds.folha.uol.com.br/cotidiano/rss091.xml"),
+    # O Antagonista
+    ("O Antagonista",       "https://www.oantagonista.com/feed/"),
+    # Poder360
+    ("Poder360",            "https://www.poder360.com.br/feed/"),
+    # Metrópoles
+    ("Metrópoles Política", "https://www.metropoles.com/brasil/politica-brasil/feed"),
+    ("Metrópoles Crimes",   "https://www.metropoles.com/brasil/policia/feed"),
+    # UOL
+    ("UOL Notícias",        "https://rss.uol.com.br/feed/noticias.xml"),
+    # CNN Brasil
+    ("CNN Brasil",          "https://www.cnnbrasil.com.br/feed/"),
+    # Veja
+    ("Veja Brasil",         "https://veja.abril.com.br/feed/"),
+]
+
 def init_db():
     with get_conn() as conn:
         with conn.cursor() as cur:
@@ -12,7 +44,7 @@ def init_db():
                 CREATE TABLE IF NOT EXISTS fontes (
                     id SERIAL PRIMARY KEY,
                     nome TEXT NOT NULL,
-                    url_rss TEXT NOT NULL,
+                    url_rss TEXT NOT NULL UNIQUE,
                     ativa BOOLEAN DEFAULT TRUE,
                     criada_em TIMESTAMPTZ DEFAULT NOW()
                 );
@@ -39,16 +71,12 @@ def init_db():
                     gerado_em TIMESTAMPTZ DEFAULT NOW()
                 );
             """)
-            # Fontes padrão
-            cur.execute("""
-                INSERT INTO fontes (nome, url_rss) VALUES
-                    ('Agência Câmara', 'https://agencia.camara.leg.br/agencia/rss/rss-politica.xml'),
-                    ('Agência Senado', 'https://www12.senado.leg.br/noticias/rss/ultimas'),
-                    ('G1 Política', 'https://g1.globo.com/rss/g1/politica/'),
-                    ('Poder360', 'https://www.poder360.com.br/feed/'),
-                    ('Metrópoles Política', 'https://www.metropoles.com/brasil/politica-brasil/feed')
-                ON CONFLICT DO NOTHING;
-            """)
+            for nome, url in FONTES_PADRAO:
+                cur.execute("""
+                    INSERT INTO fontes (nome, url_rss)
+                    VALUES (%s, %s)
+                    ON CONFLICT (url_rss) DO NOTHING
+                """, (nome, url))
         conn.commit()
 
 def query(sql, params=None, fetchall=True):
