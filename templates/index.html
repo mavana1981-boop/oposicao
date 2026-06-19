@@ -158,6 +158,11 @@
   .spin { animation: spin 1s linear infinite; display: inline-block; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  .rodape-linha { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .acao-efetuada-box { background: var(--status-feita-bg); border-radius:6px; padding:8px 12px; border:1px solid #A7F3D0; }
+  .input-acao { flex:1; border:1px solid #A7F3D0; border-radius:5px; padding:6px 10px; font-family:'Arial',sans-serif; font-size:13px; color:var(--texto); background:white; outline:none; resize:vertical; min-height:60px; }
+  .input-acao:focus { border-color:var(--verde); }
+  .acao-registrada { background:var(--status-feita-bg); border-radius:6px; padding:6px 12px; border-left:3px solid #059669; font-family:'Arial',sans-serif; }
   @media (max-width: 768px) { .layout { grid-template-columns: 1fr; } .header-inner { flex-direction: column; align-items: flex-start; } }
 </style>
 </head>
@@ -285,20 +290,48 @@
 
           <!-- Rodapé com status e assessor -->
           <div class="briefing-rodape">
-            <span class="badge-status status-{{ b.status or 'Pendente' }}">{{ b.status or 'Pendente' }}</span>
-            {% if b.assessor %}<span class="assessor-nome">👤 {{ b.assessor }}</span>{% endif %}
+            <div style="display:flex;flex-direction:column;gap:6px;flex:1;">
 
-            <form action="/briefing/{{ b.id }}/atualizar" method="POST" style="margin-left:auto;">
-              <span class="rodape-label">Status</span>
-              <select name="status" class="input-rodape">
-                {% for s in ['Pendente', 'Em análise', 'Ação efetuada'] %}
-                <option value="{{ s }}" {% if (b.status or 'Pendente') == s %}selected{% endif %}>{{ s }}</option>
-                {% endfor %}
-              </select>
-              <span class="rodape-label">Assessor</span>
-              <input type="text" name="assessor" class="input-rodape" value="{{ b.assessor or '' }}" placeholder="Nome do assessor">
-              <button type="submit" class="btn-salvar">Salvar</button>
-            </form>
+              <!-- Linha 1: badge + assessor + formulário de status -->
+              <form action="/briefing/{{ b.id }}/atualizar" method="POST" class="rodape-linha">
+                <span class="badge-status status-{{ b.status or 'Pendente' }}">{{ b.status or 'Pendente' }}</span>
+                {% if b.assessor %}<span class="assessor-nome">👤 {{ b.assessor }}</span>{% endif %}
+                <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <span class="rodape-label">Status</span>
+                  <select name="status" class="input-rodape" onchange="toggleAcao(this, {{ b.id }})">
+                    {% for s in ['Pendente', 'Em análise', 'Ação efetuada'] %}
+                    <option value="{{ s }}" {% if (b.status or 'Pendente') == s %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                  </select>
+                  <span class="rodape-label">Assessor</span>
+                  <input type="text" name="assessor" class="input-rodape" value="{{ b.assessor or '' }}" placeholder="Nome">
+                  <!-- Campo oculto para preservar acao_efetuada ao salvar só status/assessor -->
+                  <input type="hidden" name="acao_efetuada" value="{{ b.acao_efetuada or '' }}">
+                  <button type="submit" class="btn-salvar">Salvar</button>
+                </div>
+              </form>
+
+              <!-- Linha 2: campo "o que foi feito" — aparece só quando status = Ação efetuada -->
+              <div id="acao-box-{{ b.id }}" class="acao-efetuada-box" style="display:{% if (b.status or 'Pendente') == 'Ação efetuada' %}block{% else %}none{% endif %};">
+                <form action="/briefing/{{ b.id }}/atualizar" method="POST">
+                  <input type="hidden" name="status" value="{{ b.status or 'Pendente' }}">
+                  <input type="hidden" name="assessor" value="{{ b.assessor or '' }}">
+                  <div style="display:flex;align-items:flex-start;gap:8px;">
+                    <span class="rodape-label" style="padding-top:6px;white-space:nowrap;">✅ O que foi feito</span>
+                    <textarea name="acao_efetuada" class="input-acao" placeholder="Descreva a ação parlamentar realizada...">{{ b.acao_efetuada or '' }}</textarea>
+                    <button type="submit" class="btn-salvar">Salvar</button>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Exibição da ação registrada -->
+              {% if b.acao_efetuada %}
+              <div class="acao-registrada">
+                <span style="font-size:12px;color:var(--status-feita-txt);">✅ <strong>Ação registrada:</strong> {{ b.acao_efetuada }}</span>
+              </div>
+              {% endif %}
+
+            </div>
           </div>
         </article>
         {% endfor %}
@@ -342,6 +375,10 @@ async function rodarAgente(btn) {
     btn.innerHTML = orig;
     btn.disabled = false;
   }
+}
+function toggleAcao(select, id) {
+  const box = document.getElementById('acao-box-' + id);
+  if (box) box.style.display = select.value === 'Ação efetuada' ? 'block' : 'none';
 }
 function mostrarToast(msg) {
   const t = document.getElementById('toast');
