@@ -77,11 +77,16 @@ Seja seletivo: só marque como relevante notícias que efetivamente abrem espaç
 def coletar_noticias():
     """Coleta notícias de todas as fontes ativas via RSS."""
     fontes = query("SELECT * FROM fontes WHERE ativa = TRUE")
+    print(f"[COLETA] {len(fontes)} fontes ativas encontradas.")
     total_novas = 0
 
     for fonte in fontes:
         try:
+            print(f"[COLETA] Buscando: {fonte['nome']} → {fonte['url_rss']}")
             feed = feedparser.parse(fonte["url_rss"])
+            print(f"[COLETA] {fonte['nome']}: {len(feed.entries)} entradas no feed | status: {getattr(feed, 'status', 'N/A')} | bozo: {getattr(feed, 'bozo', False)}")
+            if getattr(feed, 'bozo', False):
+                print(f"[COLETA] Erro no feed {fonte['nome']}: {getattr(feed, 'bozo_exception', 'desconhecido')}")
             for entry in feed.entries[:20]:  # máximo 20 por fonte
                 url = entry.get("link", "")
                 titulo = entry.get("title", "").strip()
@@ -105,7 +110,7 @@ def coletar_noticias():
                     fetchall=False
                 )
                 if existe:
-                    continue
+                    continue  # já visto
 
                 execute(
                     """INSERT INTO noticias (fonte_id, url, titulo, resumo, publicada_em)
@@ -113,6 +118,7 @@ def coletar_noticias():
                     (fonte["id"], url, titulo, resumo, pub_date)
                 )
                 total_novas += 1
+                print(f"[COLETA] Nova: {titulo[:80]}")
 
         except Exception as e:
             print(f"[ERRO] Fonte {fonte['nome']}: {e}")
