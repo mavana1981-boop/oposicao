@@ -43,6 +43,7 @@ scheduler.start()
 def index():
     categoria = request.args.get("categoria")
     tipo = request.args.get("tipo")
+    status = request.args.get("status", "")
     pagina = int(request.args.get("pagina", 1))
     por_pagina = 20
     offset = (pagina - 1) * por_pagina
@@ -56,6 +57,9 @@ def index():
     if tipo:
         filtros += " AND b.tipo_acao = %s"
         params.append(tipo)
+    if status:
+        filtros += " AND COALESCE(b.status, 'Pendente') = %s"
+        params.append(status)
 
     params_com_limit = params + [por_pagina, offset]
 
@@ -104,6 +108,7 @@ def index():
         stats=stats,
         categoria_selecionada=categoria,
         tipo_selecionado=tipo,
+        status_selecionado=status,
         pagina=pagina,
         total_paginas=total_paginas,
     )
@@ -134,6 +139,17 @@ def toggle_fonte(fonte_id):
 def excluir_fonte(fonte_id):
     execute("DELETE FROM fontes WHERE id = %s", (fonte_id,))
     return redirect(url_for("fontes"))
+
+
+@app.route("/briefing/<int:briefing_id>/atualizar", methods=["POST"])
+def atualizar_briefing(briefing_id):
+    status = request.form.get("status", "Pendente")
+    assessor = request.form.get("assessor", "").strip()
+    execute(
+        "UPDATE briefings SET status = %s, assessor = %s WHERE id = %s",
+        (status, assessor or None, briefing_id)
+    )
+    return redirect(request.referrer or url_for("index"))
 
 
 # Flag para evitar dois ciclos simultâneos via botão
