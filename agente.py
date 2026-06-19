@@ -146,7 +146,7 @@ def analisar_noticias():
            JOIN fontes f ON f.id = n.fonte_id
            WHERE n.processada = FALSE
            ORDER BY n.coletada_em DESC
-           LIMIT 30"""
+           LIMIT 100"""
     )
 
     if not noticias:
@@ -210,7 +210,11 @@ Analise esta notícia conforme as instruções."""
 def rodar_ciclo_completo():
     """Executa um ciclo completo: coleta + análise."""
     print(f"[AGENTE] Iniciando ciclo: {datetime.now().isoformat()}")
-    novas = coletar_noticias()
-    if novas > 0:
+    coletar_noticias()
+    # Analisa tudo que estiver pendente, independente de ter coletado novidades agora
+    pendentes = query("SELECT COUNT(*) as total FROM noticias WHERE processada = FALSE", fetchall=False)
+    total_pendentes = pendentes["total"] if pendentes else 0
+    print(f"[AGENTE] {total_pendentes} notícias pendentes de análise.")
+    if total_pendentes > 0:
         analisar_noticias()
     print(f"[AGENTE] Ciclo concluído.")
