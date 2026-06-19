@@ -1,5 +1,6 @@
 import os
 import time
+import threading
 from flask import Flask, render_template, jsonify, request, redirect, url_for
 from apscheduler.schedulers.background import BackgroundScheduler
 from dotenv import load_dotenv
@@ -9,7 +10,6 @@ load_dotenv()
 app = Flask(__name__)
 
 def init_app():
-    """Inicializa banco com retry — aguarda o PostgreSQL ficar disponível."""
     from database import init_db
     for tentativa in range(10):
         try:
@@ -26,8 +26,7 @@ init_app()
 from database import query, execute
 from agente import rodar_ciclo_completo
 
-# Scheduler para coleta automática (a cada 2 horas)
-# max_instances=1 evita ciclos sobrepostos
+# Scheduler — a cada 2 horas, em thread própria, sem bloquear workers
 scheduler = BackgroundScheduler()
 scheduler.add_job(
     rodar_ciclo_completo,
@@ -92,7 +91,6 @@ def index():
         SELECT
             COUNT(*) FILTER (WHERE b.relevante = TRUE) as relevantes,
             COUNT(*) FILTER (WHERE b.relevante = FALSE) as descartadas,
-            COUNT(DISTINCT n.fonte_id) as fontes_ativas,
             MAX(b.gerado_em) as ultima_atualizacao
         FROM briefings b JOIN noticias n ON n.id = b.noticia_id
     """, fetchall=False)
@@ -122,7 +120,7 @@ def adicionar_fonte():
     nome = request.form.get("nome", "").strip()
     url_rss = request.form.get("url_rss", "").strip()
     if nome and url_rss:
-        execute("INSERT INTO fontes (nome, url_rss) VALUES (%s, %s)", (nome, url_rss))
+        execute("INSERT INTO fontes (nome, url_rss) VALUES (%s, %s) ON CONFLICT (url_rss) DO NOTHING", (nome, url_rss))
     return redirect(url_for("fontes"))
 
 
@@ -138,13 +136,27 @@ def excluir_fonte(fonte_id):
     return redirect(url_for("fontes"))
 
 
+# Flag para evitar dois ciclos simultâneos via botão
+_ciclo_em_andamento = False
+
 @app.route("/api/rodar", methods=["POST"])
 def api_rodar():
-    try:
-        rodar_ciclo_completo()
-        return jsonify({"ok": True, "mensagem": "Ciclo concluído com sucesso."})
-    except Exception as e:
-        return jsonify({"ok": False, "mensagem": str(e)}), 500
+    global _ciclo_em_andamento
+    if _ciclo_em_andamento:
+        return jsonify({"ok": False, "mensagem": "Ciclo já em andamento, aguarde."}), 429
+
+    def executar():
+        global _ciclo_em_andamento
+        _ciclo_em_andamento = True
+        try:
+            rodar_ciclo_completo()
+        finally:
+            _ciclo_em_andamento = False
+
+    # Roda em thread separada — não bloqueia o worker do gunicorn
+    t = threading.Thread(target=executar, daemon=True)
+    t.start()
+    return jsonify({"ok": True, "mensagem": "Ciclo iniciado em background. Atualize a página em alguns minutos."})
 
 
 @app.route("/api/stats")
