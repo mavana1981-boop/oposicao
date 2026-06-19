@@ -145,9 +145,25 @@ def excluir_fonte(fonte_id):
 def atualizar_briefing(briefing_id):
     status = request.form.get("status", "Pendente")
     assessor = request.form.get("assessor", "").strip()
+    acao_efetuada = request.form.get("acao_efetuada", "").strip()
+
+    # Adicionar coluna acao_efetuada se não existir (migração automática)
+    from database import get_conn
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                DO $$ BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                                   WHERE table_name='briefings' AND column_name='acao_efetuada') THEN
+                        ALTER TABLE briefings ADD COLUMN acao_efetuada TEXT;
+                    END IF;
+                END$$;
+            """)
+        conn.commit()
+
     execute(
-        "UPDATE briefings SET status = %s, assessor = %s WHERE id = %s",
-        (status, assessor or None, briefing_id)
+        "UPDATE briefings SET status = %s, assessor = %s, acao_efetuada = %s WHERE id = %s",
+        (status, assessor or None, acao_efetuada or None, briefing_id)
     )
     return redirect(request.referrer or url_for("index"))
 
