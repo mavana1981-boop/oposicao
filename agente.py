@@ -8,6 +8,35 @@ from database import query, execute
 
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY", ""))
 
+MODELOS_PREFERIDOS = [
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-lite",
+    "gemini-1.5-flash",
+    "gemini-1.5-flash-8b",
+    "gemini-1.5-pro",
+]
+
+def detectar_modelo():
+    """Retorna o primeiro modelo preferido disponível na API."""
+    try:
+        disponiveis = [
+            m.name.replace("models/", "")
+            for m in genai.list_models()
+            if "generateContent" in m.supported_generation_methods
+        ]
+        for preferido in MODELOS_PREFERIDOS:
+            if preferido in disponiveis:
+                print(f"[MODELO] Usando: {preferido}")
+                return preferido
+        if disponiveis:
+            print(f"[MODELO] Fallback para: {disponiveis[0]}")
+            return disponiveis[0]
+    except Exception as e:
+        print(f"[MODELO] Erro ao listar modelos: {e}")
+    return "gemini-2.0-flash"
+
+MODELO_ATIVO = detectar_modelo()
+
 PROMPT_SISTEMA = """Você é um analista político especializado em assessorar a Liderança da Oposição na Câmara dos Deputados do Brasil.
 
 Sua tarefa é analisar notícias e decidir se elas são relevantes para ações parlamentares da oposição.
@@ -107,7 +136,7 @@ def analisar_noticias():
         print("[ANÁLISE] Nenhuma notícia pendente.")
         return 0
 
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    model = genai.GenerativeModel(MODELO_ATIVO)
     analisadas = 0
 
     for noticia in noticias:
