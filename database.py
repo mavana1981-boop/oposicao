@@ -42,8 +42,8 @@ def init_db():
             # Fontes padrão
             cur.execute("""
                 INSERT INTO fontes (nome, url_rss) VALUES
-                    ('Agência Câmara', 'https://www.camara.leg.br/noticias/rss/politica'),
-                    ('Agência Senado', 'https://www12.senado.leg.br/noticias/rss/rss-ultimas-noticias.xml'),
+                    ('Agência Câmara', 'https://agencia.camara.leg.br/agencia/rss/rss-politica.xml'),
+                    ('Agência Senado', 'https://www12.senado.leg.br/noticias/rss/ultimas'),
                     ('G1 Política', 'https://g1.globo.com/rss/g1/politica/'),
                     ('Poder360', 'https://www.poder360.com.br/feed/'),
                     ('Metrópoles Política', 'https://www.metropoles.com/brasil/politica-brasil/feed')
