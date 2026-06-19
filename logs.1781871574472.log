@@ -1,0 +1,58 @@
+2026-06-19T12:17:32.197574975Z [inf]  Starting Container
+2026-06-19T12:17:32.783670661Z [err]  [2026-06-19 12:17:31 +0000] [1] [INFO] Starting gunicorn 22.0.0
+2026-06-19T12:17:32.783675031Z [err]  [2026-06-19 12:17:31 +0000] [1] [INFO] Listening at: http://0.0.0.0:8080 (1)
+2026-06-19T12:17:32.783679391Z [err]  [2026-06-19 12:17:31 +0000] [1] [INFO] Using worker: sync
+2026-06-19T12:17:32.783684951Z [err]  [2026-06-19 12:17:31 +0000] [5] [INFO] Booting worker with pid: 5
+2026-06-19T12:17:32.783688881Z [inf]  [MODELO] Usando: gemini-2.0-flash
+2026-06-19T12:17:52.277894698Z [inf]  [AGENTE] Iniciando ciclo: 2026-06-19T12:17:46.554920
+2026-06-19T12:17:52.277900928Z [inf]  [COLETA] 20 fontes ativas encontradas.
+2026-06-19T12:17:52.277906068Z [inf]  [COLETA] Buscando: Agência Câmara → https://www.camara.leg.br/noticias/rss/politica
+2026-06-19T12:17:52.277912138Z [inf]  [COLETA] Agência Câmara: 0 entradas no feed | status: 405 | bozo: 1
+2026-06-19T12:17:52.277917788Z [inf]  [COLETA] Erro no feed Agência Câmara: <unknown>:2:0: syntax error
+2026-06-19T12:17:52.277923368Z [inf]  [COLETA] Buscando: Agência Senado → https://www12.senado.leg.br/noticias/rss/rss-ultimas-noticias.xml
+2026-06-19T12:17:52.277928568Z [inf]  [COLETA] Agência Senado: 0 entradas no feed | status: 404 | bozo: 1
+2026-06-19T12:17:52.277934428Z [inf]  [COLETA] Erro no feed Agência Senado: <unknown>:2:0: not well-formed (invalid token)
+2026-06-19T12:17:52.277940808Z [inf]  [COLETA] Buscando: G1 Política → https://g1.globo.com/rss/g1/politica/
+2026-06-19T12:17:52.277946368Z [inf]  [COLETA] G1 Política: 100 entradas no feed | status: 200 | bozo: False
+2026-06-19T12:17:52.277951098Z [inf]  [COLETA] Buscando: Poder360 → https://www.poder360.com.br/feed/
+2026-06-19T12:17:52.277956498Z [inf]  [COLETA] Poder360: 10 entradas no feed | status: 200 | bozo: False
+2026-06-19T12:17:52.277961688Z [inf]  [COLETA] Buscando: Metrópoles Política → https://www.metropoles.com/brasil/politica-brasil/feed
+2026-06-19T12:17:52.277966767Z [inf]  [COLETA] Metrópoles Política: 20 entradas no feed | status: 200 | bozo: False
+2026-06-19T12:17:52.277972717Z [inf]  [COLETA] Buscando: Agência Câmara → https://www.camara.leg.br/noticias/rss/politica
+2026-06-19T12:17:52.818852474Z [inf]  [COLETA] Agência Câmara: 0 entradas no feed | status: 405 | bozo: 1
+2026-06-19T12:17:52.818860944Z [inf]  [COLETA] Erro no feed Agência Câmara: <unknown>:2:0: syntax error
+2026-06-19T12:17:52.818866014Z [inf]  [COLETA] Buscando: Agência Senado → https://www12.senado.leg.br/noticias/rss/rss-ultimas-noticias.xml
+2026-06-19T12:17:53.827697467Z [inf]  [COLETA] Agência Senado: 0 entradas no feed | status: 404 | bozo: 1
+2026-06-19T12:17:53.827700937Z [inf]  [COLETA] Erro no feed Agência Senado: <unknown>:2:0: not well-formed (invalid token)
+2026-06-19T12:17:53.827704397Z [inf]  [COLETA] Buscando: G1 Política → https://g1.globo.com/rss/g1/politica/
+2026-06-19T12:17:55.200940681Z [inf]  [COLETA] G1 Política: 100 entradas no feed | status: 200 | bozo: False
+2026-06-19T12:17:55.766774818Z [inf]  [COLETA] Buscando: Poder360 → https://www.poder360.com.br/feed/
+2026-06-19T12:17:55.841533623Z [inf]  [COLETA] Poder360: 10 entradas no feed | status: 200 | bozo: False
+2026-06-19T12:17:56.131169810Z [inf]  [COLETA] Buscando: Metrópoles Política → https://www.metropoles.com/brasil/politica-brasil/feed
+2026-06-19T12:17:56.987764236Z [inf]  [COLETA] Metrópoles Política: 20 entradas no feed | status: 200 | bozo: False
+2026-06-19T12:17:56.996029920Z [inf]  [COLETA] Buscando: Agência Câmara → https://www.camara.leg.br/noticias/rss/politica
+2026-06-19T12:17:57.798882439Z [inf]  [COLETA] Agência Câmara: 0 entradas no feed | status: 405 | bozo: 1
+2026-06-19T12:17:57.798888629Z [inf]  [COLETA] Erro no feed Agência Câmara: <unknown>:2:0: syntax error
+2026-06-19T12:17:57.798894439Z [inf]  [COLETA] Buscando: Agência Senado → https://www12.senado.leg.br/noticias/rss/rss-ultimas-noticias.xml
+2026-06-19T12:17:58.706401120Z [inf]  [COLETA] Agência Senado: 0 entradas no feed | status: 404 | bozo: 1
+2026-06-19T12:17:58.706405390Z [inf]  [COLETA] Erro no feed Agência Senado: <unknown>:2:0: not well-formed (invalid token)
+2026-06-19T12:17:58.706409230Z [inf]  [COLETA] Buscando: G1 Política → https://g1.globo.com/rss/g1/politica/
+2026-06-19T12:18:00.048747316Z [inf]  [COLETA] G1 Política: 100 entradas no feed | status: 200 | bozo: False
+2026-06-19T12:18:00.973008562Z [inf]  [COLETA] Buscando: Poder360 → https://www.poder360.com.br/feed/
+2026-06-19T12:18:00.973013372Z [inf]  [COLETA] Poder360: 10 entradas no feed | status: 200 | bozo: False
+2026-06-19T12:18:01.021677465Z [inf]  [COLETA] Buscando: Metrópoles Política → https://www.metropoles.com/brasil/politica-brasil/feed
+2026-06-19T12:18:01.847681097Z [inf]  [COLETA] Metrópoles Política: 20 entradas no feed | status: 200 | bozo: False
+2026-06-19T12:18:01.877745530Z [inf]  [COLETA] Buscando: Agência Câmara → https://www.camara.leg.br/noticias/rss/politica
+2026-06-19T12:18:02.733778116Z [inf]  [COLETA] Agência Câmara: 0 entradas no feed | status: 405 | bozo: 1
+2026-06-19T12:18:02.733785796Z [inf]  [COLETA] Erro no feed Agência Câmara: <unknown>:2:0: syntax error
+2026-06-19T12:18:02.733793006Z [inf]  [COLETA] Buscando: Agência Senado → https://www12.senado.leg.br/noticias/rss/rss-ultimas-noticias.xml
+2026-06-19T12:18:03.723105804Z [inf]  [COLETA] Buscando: G1 Política → https://g1.globo.com/rss/g1/politica/
+2026-06-19T12:18:03.723117974Z [inf]  [COLETA] Agência Senado: 0 entradas no feed | status: 404 | bozo: 1
+2026-06-19T12:18:03.723121904Z [inf]  [COLETA] Erro no feed Agência Senado: <unknown>:2:0: not well-formed (invalid token)
+2026-06-19T12:18:04.899629819Z [inf]  [COLETA] G1 Política: 100 entradas no feed | status: 200 | bozo: False
+2026-06-19T12:18:05.845358550Z [inf]  [COLETA] Buscando: Poder360 → https://www.poder360.com.br/feed/
+2026-06-19T12:18:05.845372310Z [inf]  [COLETA] Poder360: 10 entradas no feed | status: 200 | bozo: False
+2026-06-19T12:18:05.854005148Z [inf]  [COLETA] Buscando: Metrópoles Política → https://www.metropoles.com/brasil/politica-brasil/feed
+2026-06-19T12:18:06.173910095Z [inf]  [COLETA] Metrópoles Política: 20 entradas no feed | status: 200 | bozo: False
+2026-06-19T12:18:06.846019623Z [inf]  [COLETA] 0 novas notícias coletadas.
+2026-06-19T12:18:06.846025003Z [inf]  [AGENTE] Ciclo concluído.
