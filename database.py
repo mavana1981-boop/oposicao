@@ -11,7 +11,6 @@ FONTES_PADRAO = [
     ("G1 Economia",         "https://g1.globo.com/rss/g1/economia/"),
     ("G1 Saúde",            "https://g1.globo.com/rss/g1/ciencia-e-saude/"),
     ("G1 Educação",         "https://g1.globo.com/rss/g1/educacao/"),
-    ("G1 Segurança",        "https://g1.globo.com/rss/g1/politica/"),  # G1 não tem feed separado de segurança
     # Grupo Estado
     ("Estadão Política",    "https://feeds.estadao.com.br/rss/politica"),
     ("Estadão Economia",    "https://feeds.estadao.com.br/rss/economia"),
@@ -29,8 +28,6 @@ FONTES_PADRAO = [
     # Metrópoles
     ("Metrópoles Política", "https://www.metropoles.com/brasil/politica-brasil/feed"),
     ("Metrópoles Crimes",   "https://www.metropoles.com/brasil/policia/feed"),
-    # UOL
-    ("UOL Notícias",        "https://rss.uol.com.br/feed/noticias.xml"),
     # CNN Brasil
     ("CNN Brasil",          "https://www.cnnbrasil.com.br/feed/"),
     # Veja
@@ -40,11 +37,12 @@ FONTES_PADRAO = [
 def init_db():
     with get_conn() as conn:
         with conn.cursor() as cur:
+            # Criar tabelas
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS fontes (
                     id SERIAL PRIMARY KEY,
                     nome TEXT NOT NULL,
-                    url_rss TEXT NOT NULL UNIQUE,
+                    url_rss TEXT NOT NULL,
                     ativa BOOLEAN DEFAULT TRUE,
                     criada_em TIMESTAMPTZ DEFAULT NOW()
                 );
@@ -71,12 +69,28 @@ def init_db():
                     gerado_em TIMESTAMPTZ DEFAULT NOW()
                 );
             """)
+
+            # Garantir constraint UNIQUE em url_rss (caso a tabela já exista sem ela)
+            cur.execute("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM pg_constraint
+                        WHERE conname = 'fontes_url_rss_key'
+                    ) THEN
+                        ALTER TABLE fontes ADD CONSTRAINT fontes_url_rss_key UNIQUE (url_rss);
+                    END IF;
+                END$$;
+            """)
+
+            # Inserir fontes padrão
             for nome, url in FONTES_PADRAO:
                 cur.execute("""
                     INSERT INTO fontes (nome, url_rss)
                     VALUES (%s, %s)
                     ON CONFLICT (url_rss) DO NOTHING
                 """, (nome, url))
+
         conn.commit()
 
 def query(sql, params=None, fetchall=True):
