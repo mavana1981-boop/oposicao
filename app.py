@@ -1,17 +1,42 @@
 import os
+import time
 from flask import Flask, render_template, jsonify, request, redirect, url_for
 from apscheduler.schedulers.background import BackgroundScheduler
 from dotenv import load_dotenv
-from database import init_db, query, execute
-from agente import rodar_ciclo_completo, coletar_noticias, analisar_noticias
 
 load_dotenv()
 
 app = Flask(__name__)
 
+def init_app():
+    """Inicializa banco com retry — aguarda o PostgreSQL ficar disponível."""
+    from database import init_db
+    for tentativa in range(10):
+        try:
+            init_db()
+            print("[DB] Banco inicializado com sucesso.")
+            return
+        except Exception as e:
+            print(f"[DB] Tentativa {tentativa + 1}/10 falhou: {e}")
+            time.sleep(3)
+    print("[DB] AVISO: não foi possível inicializar o banco.")
+
+init_app()
+
+from database import query, execute
+from agente import rodar_ciclo_completo
+
 # Scheduler para coleta automática (a cada 2 horas)
+# max_instances=1 evita ciclos sobrepostos
 scheduler = BackgroundScheduler()
-scheduler.add_job(rodar_ciclo_completo, "interval", hours=2, id="coleta_automatica")
+scheduler.add_job(
+    rodar_ciclo_completo,
+    "interval",
+    hours=2,
+    id="coleta_automatica",
+    max_instances=1,
+    coalesce=True,
+)
 scheduler.start()
 
 
@@ -33,7 +58,7 @@ def index():
         filtros += " AND b.tipo_acao = %s"
         params.append(tipo)
 
-    params += [por_pagina, offset]
+    params_com_limit = params + [por_pagina, offset]
 
     briefings = query(f"""
         SELECT b.*, n.titulo, n.url, n.resumo, n.publicada_em, f.nome as fonte
@@ -43,13 +68,13 @@ def index():
         {filtros}
         ORDER BY b.gerado_em DESC
         LIMIT %s OFFSET %s
-    """, params)
+    """, params_com_limit)
 
     total = query(f"""
         SELECT COUNT(*) as total FROM briefings b
         JOIN noticias n ON n.id = b.noticia_id
-        {filtros.replace('LIMIT %s OFFSET %s', '')}
-    """, params[:-2], fetchall=False)
+        {filtros}
+    """, params, fetchall=False)
 
     categorias = query("""
         SELECT categoria, COUNT(*) as total
@@ -72,7 +97,7 @@ def index():
         FROM briefings b JOIN noticias n ON n.id = b.noticia_id
     """, fetchall=False)
 
-    total_paginas = (total["total"] // por_pagina) + 1 if total else 1
+    total_paginas = (total["total"] // por_pagina) + 1 if total and total["total"] else 1
 
     return render_template("index.html",
         briefings=briefings,
@@ -135,5 +160,4 @@ def api_stats():
 
 
 if __name__ == "__main__":
-    init_db()
     app.run(debug=True, port=5000)
