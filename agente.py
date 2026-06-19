@@ -109,7 +109,7 @@ def analisar_noticia(noticia, model):
         f"{PROMPT_SISTEMA}\n\n{prompt}",
         generation_config=genai.types.GenerationConfig(
             temperature=0.1,
-            max_output_tokens=300,
+            max_output_tokens=1024,
         )
     )
     return extrair_json(response.text)
